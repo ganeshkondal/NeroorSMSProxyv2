@@ -6,7 +6,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.List;
 import java.util.ArrayList;
 
-
+import com.neroor.sms.data.Message;
 
 public class EventManager{
 
@@ -27,7 +27,7 @@ public class EventManager{
         }
     }
 
-    public static boolean fireEvent(EventType type, Object data){
+    public static boolean fireEvent(EventType type, Message data){
         if( type != null ) {
             List<EventListener> listeners = listenerMap.get( type );
             //listeners.forEach( listener -> listener.handleEvent(type, data) ); source setting is still 1.7

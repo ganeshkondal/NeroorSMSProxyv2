@@ -6,6 +6,8 @@ import android.net.NetworkInfo;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.InvocationTargetException;
+import java.util.concurrent.TimeUnit;
+
 import android.net.wifi.WifiManager;
 import android.content.Context;
 
@@ -24,7 +26,8 @@ public class Wifi4GSwitcher {
         MOBILE_WIFI, MOBILE_DATA
     }
 
-    static String LOG_TAG = "WIFI_DATA_TOGGLE";
+    static String LOG_TAG = "N_TAG_WIFI_DATA_TOGGLE";
+    static long lastToggledTime = 0L;
 
     /**
      * If Wifi is not working switch it off, so 4g starts working automatically.
@@ -34,7 +37,13 @@ public class Wifi4GSwitcher {
      * @return
      * @throws NoConnectionException
      */
-    static boolean toggleWifi4G(Context context) throws NoConnectionException{
+    public static boolean toggleWifi4G(Context context) throws NoConnectionException{
+        lastToggledTime = System.currentTimeMillis();
+
+        if( !isToggleAllowed() ) {
+            Logger.print(LOG_TAG, "Retrying the toggle too quick ... so not going to allow it !!!");
+            return false;
+        }
 
         boolean toggleComplete = false;
         ConnectivityManager cm =
@@ -74,7 +83,7 @@ public class Wifi4GSwitcher {
                 return mobileDataSwitchedOn;
             }
 
-            if( !isWiFi  ){
+            if( !isWiFi  ){ // covers two scenarios - w - off & md - off && w - off & md - on
                 Logger.print(LOG_TAG, " Wifi is off");
 
                 // no need to check 4g enabled or not
@@ -91,9 +100,34 @@ public class Wifi4GSwitcher {
                 Logger.print(LOG_TAG, " Enabling Mobile Data DID work !!!!");
                 return wifiSwitchedOn;
             }
-        }
-        return true;
 
+            if( isWiFi && isMobileDataOn ){
+                // switch off wifi here - as the probability to go out with MobileData is higher.
+                Logger.print(LOG_TAG, "Wifi On & Mobile Data is enabled .. Going to try switching off Wifi !!");
+                boolean wifiswitchedOn = disableWifi(context);
+                if( !wifiswitchedOn ) {
+                    Logger.print(LOG_TAG, " Disabling Wifi didn't work !!!!");
+                    //TBD: Send SMS as all options are out
+                    return false;
+                }
+                return wifiswitchedOn;
+            }
+        }
+        // after toggling again check for connectivity
+
+        isConnected = activeNetwork != null &&
+                activeNetwork.isConnectedOrConnecting();
+        Logger.print(LOG_TAG, " After toggle checking the internet connectivity  !!!! " + isConnected );
+
+        return isConnected;
+
+    }
+
+
+    static boolean isToggleAllowed(){
+        long currentTime = System.currentTimeMillis();
+        // less than one minute
+        return ( currentTime - lastToggledTime < 60*1000 )?false: true;
     }
 
     static boolean disableWifi(Context context){
