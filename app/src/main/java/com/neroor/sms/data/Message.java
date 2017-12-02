@@ -12,7 +12,7 @@ public class Message {
     private String message = null;
     private Date receivedTime = null;
     private MessageStatus status;
-
+    private int retryCount = 0;
 
     public Message(String mdn, String bodyMessage){
         receivedTime = java.util.Calendar.getInstance().getTime();
@@ -44,7 +44,13 @@ public class Message {
         this.receivedTime = receivedTime;
     }
 
+    public void incrementRetryCount(){
+        retryCount++;
+    }
 
+    public int getRetryCount(){
+        return retryCount;
+    }
 
     @Override
     public boolean equals(Object o) {

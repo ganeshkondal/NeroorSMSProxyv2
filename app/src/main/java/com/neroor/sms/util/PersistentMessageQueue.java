@@ -3,6 +3,7 @@ package com.neroor.sms.util;
 import android.util.Log;
 
 import com.neroor.sms.SmsActivity;
+import com.neroor.sms.config.Config;
 import com.neroor.sms.util.VolleyHttpRequestHandler;
 import com.neroor.sms.util.MessageQueue;
 import com.neroor.sms.data.Message;
@@ -33,9 +34,11 @@ public class PersistentMessageQueue<Message>
 
         // send to Neroor
         requestHandler.sendAppointmentRequest((com.neroor.sms.data.Message) obj);
-        //removeItemOnReachingMaxLimit();
+        removeItemOnReachingMaxLimit();
 
-        return (null != obj && !this.contains(obj))?super.add((Message) obj):true;
+        synchronized ( PersistentMessageQueue.class ) {
+            return super.add((Message) obj);
+        }
     }
 
     @Override
@@ -44,19 +47,24 @@ public class PersistentMessageQueue<Message>
 
         // send to Neroor
         requestHandler.sendAppointmentRequest((com.neroor.sms.data.Message) obj);
-        //removeItemOnReachingMaxLimit();
+        removeItemOnReachingMaxLimit();
         ///super.add(index, (Message) obj);
-        if (null != obj && !this.contains(obj)) {
-            super.add(index, (Message) obj);
+
+        synchronized ( PersistentMessageQueue.class ) {
+            if (null != obj && !this.contains(obj)) {
+                super.add(index, (Message) obj);
+            }
         }
     }
 
     private void removeItemOnReachingMaxLimit(){
         Logger.print(SmsActivity.TAG, " Removign Message from the Queue: ");
 
-        if( size() >= MAX_MESSAGE_COUNT ) {
+        if( size() >= Config.MAX_QUEUE_COUNT ) {
             // remove the first element
-            Logger.print(SmsActivity.TAG, " Removed Message " + remove( 0 ));
+            synchronized ( PersistentMessageQueue.class ) {
+                Logger.print(SmsActivity.TAG, " Removed Message " + remove(0));
+            }
         }
     }
 

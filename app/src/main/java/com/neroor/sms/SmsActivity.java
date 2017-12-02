@@ -18,6 +18,7 @@ import com.neroor.sms.util.PersistentMessageQueue;
 import com.neroor.sms.util.MessageQueue;
 import com.neroor.sms.service.SmsManager;
 import com.neroor.sms.util.Wifi4GSwitcher;
+import java.util.List;
 /**
  * Primary activity in this app. Provides a list view of messages received /handled.
  * Makes use of a persistent message queue as the view model holder (via the ArrayAdapter)
@@ -56,7 +57,7 @@ public class SmsActivity extends Activity implements OnItemClickListener {
         appContext = this.getApplicationContext();
         setContentView(R.layout.activity_sms);
         smsListView = (ListView) findViewById(R.id.SMSList);
-        arrayAdapter = new ArrayAdapter<Message>(this, android.R.layout.simple_list_item_1, smsMessagesList);
+        arrayAdapter = new ArrayAdapter<Message>(this, android.R.layout.simple_list_item_1, (List)smsMessagesList);
         smsListView.setAdapter(arrayAdapter);
         smsListView.setOnItemClickListener(this);
 

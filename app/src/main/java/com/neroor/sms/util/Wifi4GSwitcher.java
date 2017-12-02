@@ -29,21 +29,27 @@ public class Wifi4GSwitcher {
     static String LOG_TAG = "N_TAG_WIFI_DATA_TOGGLE";
     static long lastToggledTime = 0L;
 
+    static {
+        lastToggledTime = System.currentTimeMillis();
+        Logger.print(LOG_TAG, "Initializing the last login time: !!!" + lastToggledTime);
+    }
+
     /**
      * If Wifi is not working switch it off, so 4g starts working automatically.
      * If 4g is not working then switch on wifi so it can connect and try.
+     *
+     * Default : Wifi on / Mobile data on
+     *
+     * case 1) error sending; then wifi is the issue; switch off and send
+     *
+     * case 2) still issue with mobile data on - switch on wifi
      *
      * @param context
      * @return
      * @throws NoConnectionException
      */
     public static boolean toggleWifi4G(Context context) throws NoConnectionException{
-        lastToggledTime = System.currentTimeMillis();
-
-        if( !isToggleAllowed() ) {
-            Logger.print(LOG_TAG, "Retrying the toggle too quick ... so not going to allow it !!!");
-            return false;
-        }
+        if( lastToggledTime == 0 ) lastToggledTime = System.currentTimeMillis();
 
         boolean toggleComplete = false;
         ConnectivityManager cm =
@@ -60,12 +66,24 @@ public class Wifi4GSwitcher {
 
         Logger.print(LOG_TAG, "Internet Connect is NOT there, so going to toggle !!!");
 
-        // no connection so coming down
-        boolean isWiFi = activeNetwork.getType() == ConnectivityManager.TYPE_WIFI;
-        Logger.print(LOG_TAG, "Wifi Enabled status : " + isWiFi);
+        if( !isToggleAllowed() ) {
+            Logger.print(LOG_TAG, "Retrying the toggle too quick ... so not going to allow it !!!");
+            return false;
+        }
 
-        boolean isMobileDataOn = activeNetwork.getType() == ConnectivityManager.TYPE_MOBILE;
-        Logger.print(LOG_TAG, "Mobile Data Status : " + isMobileDataOn);
+        boolean isWiFi = false;
+        boolean isMobileDataOn = false;
+        if( null != activeNetwork ) {
+
+            // no connection so coming down
+            isWiFi = activeNetwork.getType() == ConnectivityManager.TYPE_WIFI;
+            Logger.print(LOG_TAG, "Wifi Enabled status : " + isWiFi);
+
+            isMobileDataOn = activeNetwork.getType() == ConnectivityManager.TYPE_MOBILE;
+            Logger.print(LOG_TAG, "Mobile Data Status : " + isMobileDataOn);
+        } else {
+            Logger.print(LOG_TAG, "activeNetwork is null. Unable to determine wifi / mobile data status: " + activeNetwork);
+        }
 
         if( !isConnected ){
 
@@ -92,12 +110,12 @@ public class Wifi4GSwitcher {
                 boolean wifiSwitchedOn = enableWifi( context );
 
                 if( !wifiSwitchedOn ) {
-                    Logger.print(LOG_TAG, " Enabling Wifi work !!!!");
+                    Logger.print(LOG_TAG, " Enabling Wifi did not work !!!!");
                     //TBD: Send SMS as all options are out
                     return false;
                 }
 
-                Logger.print(LOG_TAG, " Enabling Mobile Data DID work !!!!");
+                Logger.print(LOG_TAG, " Enabling Wifi worked !!!!");
                 return wifiSwitchedOn;
             }
 
@@ -127,7 +145,7 @@ public class Wifi4GSwitcher {
     static boolean isToggleAllowed(){
         long currentTime = System.currentTimeMillis();
         // less than one minute
-        return ( currentTime - lastToggledTime < 60*1000 )?false: true;
+        return ( currentTime - lastToggledTime < 5*1000 )?false: true; // 10 seconds for testing
     }
 
     static boolean disableWifi(Context context){

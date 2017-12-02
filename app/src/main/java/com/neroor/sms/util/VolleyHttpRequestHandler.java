@@ -2,6 +2,8 @@ package com.neroor.sms.util;
 
 import java.net.URLEncoder;
 import android.content.Context;
+
+import com.android.volley.DefaultRetryPolicy;
 import com.android.volley.RequestQueue;
 import com.android.volley.Request;
 import com.android.volley.Response;
@@ -9,6 +11,7 @@ import com.android.volley.VolleyError;
 import com.android.volley.toolbox.Volley;
 import com.android.volley.toolbox.StringRequest;
 import com.neroor.sms.NeroorApp;
+import com.neroor.sms.config.Config;
 import com.neroor.sms.data.Message;
 import com.neroor.sms.util.Logger;
 import com.neroor.sms.event.EventManager;
@@ -27,6 +30,7 @@ public class VolleyHttpRequestHandler {
 
     //singleton queue reference
     private static RequestQueue queue = null;
+    private DefaultRetryPolicy retryPolicy = new DefaultRetryPolicy( 5000, Config.MAX_RETRY_COUNT, DefaultRetryPolicy.DEFAULT_BACKOFF_MULT );
 
     public RequestQueue getRequestQueue(){
         if( null == queue ) {
@@ -37,6 +41,7 @@ public class VolleyHttpRequestHandler {
     }
 
     public boolean sendAppointmentRequest(final Message message) {
+        message.incrementRetryCount();
 
         // Request a string response from the provided URL.
         StringRequest stringRequest = new StringRequest(Request.Method.GET, buildNeroorGetRequest(message),
@@ -49,23 +54,25 @@ public class VolleyHttpRequestHandler {
                 }, new Response.ErrorListener() {
             @Override
             public void onErrorResponse(VolleyError error) {
-                Logger.print("N_RESP", "That didn't work!" + error.toString() );
-                error.printStackTrace();
+                Logger.print("N_RESP", "That didn't work! Going to fireevent.." + error.toString() );
+                //error.printStackTrace();
 
-                //fire a toggle to wifi or 4g event
-                EventManager.fireEvent(EventType.TOGGLE_WIFI_4G, message);
-
-                // SMS message to folks - that we are trying to switch
-
+                //fire a message sending error
+                //EventManager.fireEvent(EventType.MESSAGE_SENDING_ERROR, message);
             }
         });
 
+        // default retry
+        stringRequest.setRetryPolicy( getRetryPolicy() );
         // Add the request to the RequestQueue.
         getRequestQueue().add(stringRequest);
         return true;
 
     }
 
+    private DefaultRetryPolicy getRetryPolicy(){
+        return retryPolicy;
+    }
 
     private static String buildNeroorGetRequest(Message message) {
         if (null == message || message.getSenderMDN() == null || message.getMessage() == null) {
