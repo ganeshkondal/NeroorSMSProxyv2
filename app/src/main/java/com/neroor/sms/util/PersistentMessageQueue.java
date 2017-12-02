@@ -17,7 +17,7 @@ public class PersistentMessageQueue<Message>
 
     public PersistentMessageQueue(){
         super();
-        requestHandler = new VolleyHttpRequestHandler();
+        requestHandler = VolleyHttpRequestHandler.getInstance(); //new VolleyHttpRequestHandler();
     }
 
     // as add or insert gets called

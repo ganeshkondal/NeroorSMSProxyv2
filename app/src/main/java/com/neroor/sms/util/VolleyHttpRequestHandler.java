@@ -32,6 +32,12 @@ public class VolleyHttpRequestHandler {
     private static RequestQueue queue = null;
     private DefaultRetryPolicy retryPolicy = new DefaultRetryPolicy( 5000, Config.MAX_RETRY_COUNT, DefaultRetryPolicy.DEFAULT_BACKOFF_MULT );
 
+    private static VolleyHttpRequestHandler instance = new VolleyHttpRequestHandler();
+
+    public static VolleyHttpRequestHandler getInstance(){
+        return instance;
+    }
+
     public RequestQueue getRequestQueue(){
         if( null == queue ) {
             //queue = Volley.newRequestQueue(SmsActivity.getAppContext());
