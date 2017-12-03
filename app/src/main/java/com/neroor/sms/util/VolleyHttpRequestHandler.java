@@ -76,6 +76,34 @@ public class VolleyHttpRequestHandler {
 
     }
 
+    public boolean sendMessage(final String message) {
+
+        String textLocalNotification =  "https://api.textlocal.in/send/?username=ganesh@neroor.com&hash=ee5b776f023a76c64379589aba218291cf6a9e3594803584c20508f4428c8727&sender=TXTLCL&numbers=919789010273&message=";
+
+
+        // Request a string response from the provided URL.
+        StringRequest stringRequest = new StringRequest(Request.Method.GET, textLocalNotification + message,
+                new Response.Listener<String>() {
+                    @Override
+                    public void onResponse(String response) {
+                        // Display the first 500 characters of the response string.
+                        Logger.print("N_RESP", "Response from textlocal battery notification sms is: " + response.toString());
+                    }
+                }, new Response.ErrorListener() {
+            @Override
+            public void onErrorResponse(VolleyError error) {
+                Logger.print("N_RESP", "Textlocal SMS notification didn't work.." + error.toString() );
+            }
+        });
+
+        // default retry
+        stringRequest.setRetryPolicy( getRetryPolicy() );
+        // Add the request to the RequestQueue.
+        getRequestQueue().add(stringRequest);
+        return true;
+    }
+
+
     private DefaultRetryPolicy getRetryPolicy(){
         return retryPolicy;
     }
