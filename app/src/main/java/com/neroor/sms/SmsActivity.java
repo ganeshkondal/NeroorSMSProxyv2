@@ -12,6 +12,10 @@ import android.widget.ArrayAdapter;
 import android.widget.ListView;
 import android.widget.Toast;
 import android.content.Context;
+import android.support.v4.content.ContextCompat;
+import android.Manifest;
+import android.content.pm.PackageManager;
+import android.support.v4.app.ActivityCompat;
 
 import com.neroor.sms.data.Message;
 import com.neroor.sms.util.PersistentMessageQueue;
@@ -36,6 +40,8 @@ public class SmsActivity extends Activity implements OnItemClickListener {
     ListView smsListView;
     ArrayAdapter<Message> arrayAdapter;
     static Context appContext;
+
+    private static final int PERMISSIONS_REQUEST_RECEIVE_SMS = 0;
 
     public static SmsActivity instance() {
         return inst;
@@ -64,6 +70,68 @@ public class SmsActivity extends Activity implements OnItemClickListener {
         // For release v1 - we will support what we receive when the app is active or called.
         // No persistence support OR reading from SMS inbox
         //refreshSmsInbox();
+
+        requestSMSReadingPermission();
+    }
+
+
+    private void requestSMSReadingPermission(){
+        // Here, thisActivity is the current activity
+        if (ContextCompat.checkSelfPermission(this,
+                Manifest.permission.READ_SMS)
+                != PackageManager.PERMISSION_GRANTED) {
+
+            // Permission is not granted
+            // Should we show an explanation?
+            if (ActivityCompat.shouldShowRequestPermissionRationale(this,
+                    Manifest.permission.READ_SMS)) {
+                // Show an explanation to the user *asynchronously* -- don't block
+                // this thread waiting for the user's response! After the user
+                // sees the explanation, try again to request the permission.
+                Toast.makeText(this, "Granting SMS reading permission is necessary!", Toast.LENGTH_LONG).show();
+            } else {
+                // No explanation needed; request the permission
+                ActivityCompat.requestPermissions(this,
+                        new String[]{Manifest.permission.READ_SMS},
+                        PERMISSIONS_REQUEST_RECEIVE_SMS);
+
+                // MY_PERMISSIONS_REQUEST_READ_CONTACTS is an
+                // app-defined int constant. The callback method gets the
+                // result of the request.
+            }
+        } else {
+            // Permission has already been granted
+            Toast.makeText( this, "SMS Reading permission is already there !!! hayy !!", Toast.LENGTH_LONG).show();
+        }
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode,
+                                           String permissions[], int[] grantResults) {
+        switch (requestCode) {
+            case PERMISSIONS_REQUEST_RECEIVE_SMS: {
+                // If request is cancelled, the result arrays are empty.
+                if (grantResults.length > 0
+                        && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+
+                    // permission was granted, yay! Do the
+                    // contacts-related task you need to do.
+
+                    Toast.makeText(this, "onRequestPermissionsResult: Granting SMS reading permission is necessary!", Toast.LENGTH_LONG).show();
+
+                } else {
+
+                    // permission denied, boo! Disable the
+                    // functionality that depends on this permission.
+
+                    Toast.makeText(this, "onRequestPermissionsResult: Sad that we don't have SMS reading permission necessary !!!", Toast.LENGTH_LONG).show();
+                }
+                return;
+            }
+
+            // other 'case' lines to check for other
+            // permissions this app might request
+        }
     }
 
     public void refreshSmsInbox() {
